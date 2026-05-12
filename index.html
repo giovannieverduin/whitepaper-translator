@@ -1,20 +1,790 @@
 <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Whitepaper Translator</title>
-    <style>
-      body { font-family: system-ui, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #0a0a0a; color: #fafafa; }
-    .container { text-align: center; padding: 2rem; }
-    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
-    p { color: #888; font-size: 1.1rem; }
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Whitepaper Translator - Giovanni Everduin</title>
+  <meta name="description" content="Translate DeFi whitepapers into TradFi language and vice versa. Built by Giovanni Everduin.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Outfit:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --charcoal: #111111;
+      --navy: #0E3460;
+      --orange: #FF6B2B;
+      --white: #FFFFFF;
+      --gray-100: #F5F5F5;
+      --gray-200: #E0E0E0;
+      --gray-400: #888888;
+      --gray-600: #666666;
+      --gray-800: #1A1A1A;
+      --gray-900: #141414;
+      --font-display: 'Outfit', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'Space Mono', monospace;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--charcoal);
+      color: var(--white);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* NAV */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 2rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .nav-brand {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--white);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .nav-brand span { color: var(--orange); }
+    .nav-tag {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--orange);
+      background: rgba(255,107,43,0.1);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .nav-link {
+      font-size: 0.85rem;
+      color: var(--gray-400);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-link:hover { color: var(--white); }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 3rem 2rem 2rem;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(2rem, 5vw, 3rem);
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      letter-spacing: -0.03em;
+    }
+    .hero h1 em {
+      font-style: normal;
+      color: var(--orange);
+    }
+    .hero p {
+      color: var(--gray-400);
+      font-size: 1.05rem;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* MAIN LAYOUT */
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    @media (max-width: 860px) {
+      .app { grid-template-columns: 1fr; }
+    }
+
+    /* PANELS */
+    .panel {
+      background: var(--gray-900);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .panel-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: -0.01em;
+    }
+
+    /* SAMPLE SELECTOR */
+    .samples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .sample-btn {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: transparent;
+      color: var(--gray-400);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .sample-btn:hover {
+      border-color: var(--orange);
+      color: var(--white);
+    }
+    .sample-btn.active {
+      background: rgba(255,107,43,0.12);
+      border-color: var(--orange);
+      color: var(--orange);
+    }
+
+    /* TEXTAREA */
+    .input-area {
+      width: 100%;
+      min-height: 280px;
+      background: var(--charcoal);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 1rem;
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      line-height: 1.7;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-area:focus {
+      border-color: rgba(255,107,43,0.4);
+    }
+    .input-area::placeholder { color: var(--gray-600); }
+    .char-count {
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--gray-600);
+      margin-top: 0.5rem;
+    }
+    .char-count.warn { color: var(--orange); }
+
+    /* MODE TOGGLE */
+    .mode-toggle {
+      display: flex;
+      background: var(--charcoal);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .mode-btn {
+      flex: 1;
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.55rem 1rem;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--gray-400);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-btn.active {
+      background: var(--navy);
+      color: var(--white);
+    }
+    .mode-btn.active.builder {
+      background: var(--orange);
+      color: var(--charcoal);
+    }
+
+    /* TRANSLATE BUTTON */
+    .translate-btn {
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.85rem;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: -0.01em;
+      border: none;
+      border-radius: 8px;
+      background: var(--orange);
+      color: var(--charcoal);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .translate-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .translate-btn:active { transform: translateY(0); }
+    .translate-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      filter: none;
+    }
+
+    /* OUTPUT */
+    .output-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 380px;
+      color: var(--gray-600);
+      text-align: center;
+    }
+    .output-empty svg { margin-bottom: 1rem; opacity: 0.3; }
+    .output-empty p { font-size: 0.9rem; }
+
+    /* LOADING */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 380px;
+      gap: 1.5rem;
+    }
+    .loading-spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,107,43,0.15);
+      border-top-color: var(--orange);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--gray-400);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+    /* RESULT */
+    .result { animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .result-section { margin-bottom: 1.5rem; }
+    .result-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--orange);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+    .result-translation {
+      font-size: 0.92rem;
+      line-height: 1.8;
+      color: rgba(255,255,255,0.88);
+    }
+
+    /* GLOSSARY */
+    .glossary-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .glossary-card {
+      background: var(--charcoal);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .glossary-term {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--orange);
+      margin-bottom: 0.4rem;
+    }
+    .glossary-row {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      margin-bottom: 0.25rem;
+    }
+    .glossary-row-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--gray-600);
+      min-width: 70px;
+      text-transform: uppercase;
+    }
+    .glossary-row-value { color: rgba(255,255,255,0.75); }
+
+    /* TENSION NOTE */
+    .tension-note {
+      background: rgba(14,52,96,0.2);
+      border-left: 3px solid var(--navy);
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      font-size: 0.88rem;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.8);
+      font-style: italic;
+    }
+
+    /* COPY BUTTON */
+    .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: transparent;
+      color: var(--gray-400);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover { border-color: var(--orange); color: var(--white); }
+    .copy-btn.copied { border-color: #4ade80; color: #4ade80; }
+
+    /* EMAIL GATE */
+    .email-gate {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 380px;
+      text-align: center;
+      gap: 1rem;
+    }
+    .email-gate.show { display: flex; }
+    .email-gate h3 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.2rem;
+    }
+    .email-gate p { color: var(--gray-400); font-size: 0.9rem; max-width: 360px; }
+    .email-input-wrap {
+      display: flex;
+      gap: 0.5rem;
+      width: 100%;
+      max-width: 360px;
+    }
+    .email-input {
+      flex: 1;
+      padding: 0.7rem 1rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: var(--charcoal);
+      color: var(--white);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .email-input:focus { border-color: var(--orange); }
+    .email-submit {
+      padding: 0.7rem 1.25rem;
+      border-radius: 8px;
+      border: none;
+      background: var(--orange);
+      color: var(--charcoal);
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .uses-left {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--gray-600);
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      margin-top: 2rem;
+    }
+    .footer-brand {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 0.9rem;
+      color: var(--gray-600);
+    }
+    .footer-brand span { color: var(--orange); }
+    .footer-sub {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+      margin-top: 0.25rem;
+    }
+    .footer-sub a { color: var(--gray-400); text-decoration: none; }
+    .footer-sub a:hover { color: var(--white); }
   </style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>Whitepaper Translator</h1>
-        <p>Coming soon - translator.giovannieverduin.com</p>
+</head>
+<body>
+
+<nav>
+  <a href="https://giovannieverduin.com" class="nav-brand">Giovanni Everduin<span>.</span></a>
+  <span class="nav-tag">Build in Public #1</span>
+  <a href="https://giovannieverduin.com" class="nav-link">Back to site</a>
+</nav>
+
+<div class="hero">
+  <h1>The Whitepaper <em>Translator</em></h1>
+  <p>Paste any DeFi or RWA whitepaper excerpt. Pick a mode. Get it translated into the language of the other world.</p>
+</div>
+
+<div class="app">
+  <!-- LEFT PANEL: INPUT -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Input</span>
+      <span class="uses-left" id="usesLeft"></span>
+    </div>
+
+    <div class="samples" id="samples"></div>
+
+    <textarea class="input-area" id="inputText" placeholder="Paste a whitepaper excerpt here, or select a sample above..." maxlength="5000"></textarea>
+    <div class="char-count" id="charCount">0 / 5,000</div>
+
+    <div style="margin-top: 1rem;">
+      <div class="panel-header" style="margin-bottom: 0.5rem;">
+        <span class="panel-title">Translation Mode</span>
       </div>
-    </body>
-    </html>
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-mode="banker" id="bankerBtn">Banker Mode</button>
+        <button class="mode-btn builder" data-mode="builder" id="builderBtn">Builder Mode</button>
+      </div>
+    </div>
+
+    <button class="translate-btn" id="translateBtn">Translate</button>
+  </div>
+
+  <!-- RIGHT PANEL: OUTPUT -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Translation</span>
+      <button class="copy-btn" id="copyBtn" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span id="copyLabel">Copy</span>
+      </button>
+    </div>
+
+    <div id="outputArea">
+      <div class="output-empty" id="emptyState">
+           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <p>Select a sample or paste your own text, pick a mode, and hit Translate.</p>
+      </div>
+    </div>
+
+    <!-- EMAIL GATE (hidden by default) -->
+    <div class="email-gate" id="emailGate">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      <h3>You're out of free translations</h3>
+      <p>Enter your email for unlimited access. No spam - just building in public.</p>
+      <div class="email-input-wrap">
+        <input type="email" class="email-input" id="emailInput" placeholder="you@company.com">
+        <button class="email-submit" id="emailSubmit">Unlock</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-brand">GIO<span>/</span></div>
+  <div class="footer-sub">Built in public by <a href="https://giovannieverduin.com">Giovanni Everduin</a></div>
+</footer>
+
+<script>
+// ========== SAMPLE WHITEPAPERS ==========
+const SAMPLES = [
+  {
+    name: "BlackRock BUIDL",
+    text: `The BlackRock USD Institutional Digital Liquidity Fund (BUIDL) is a tokenized money market fund that invests in U.S. Treasury bills, repurchase agreements, and cash. Each token represents one share of the fund and targets a stable value of $1.00 per token. Dividends accrue daily and are distributed monthly via new token issuance. The fund operates on the Ethereum blockchain and utilizes a permissioned smart contract architecture - only whitelisted addresses verified through KYC/AML procedures can hold or transfer tokens. Securitize serves as the transfer agent and tokenization platform, maintaining an on-chain registry of eligible investors. Secondary transfers between whitelisted wallets settle atomically on-chain, eliminating traditional T+1 settlement delays.`
+  },
+  {
+    name: "Ondo Finance",
+    text: `OUSG (Ondo Short-Term U.S. Government Bond Fund) provides tokenized exposure to short-duration U.S. Treasuries. The fund invests substantially all of its assets in the BlackRock USD Institutional Digital Liquidity Fund (BUIDL), creating a composable DeFi wrapper around an institutional-grade money market product. Token holders can mint and redeem OUSG through Ondo's smart contracts, with instant minting available during market hours. The protocol enforces transfer restrictions through an on-chain allowlist managed by Ondo's compliance layer. rOUSG, a rebasing variant, automatically distributes yield by increasing token balances daily. Flux Finance, an Ondo-affiliated lending protocol, accepts OUSG as collateral, enabling holders to borrow stablecoins against their tokenized Treasury position without liquidating the underlying asset.`
+  },
+  {
+    name: "Uniswap v3",
+    text: `Uniswap v3 introduces concentrated liquidity, allowing liquidity providers (LPs) to allocate capital within custom price ranges rather than across the full 0 to infinity spectrum. This mechanism creates individual positions that aggregate into a single pool, functioning as a series of constant product curves along user-defined intervals. LPs earn trading fees proportional to their share of liquidity at the current price, enabling up to 4,000x capital efficiency compared to v2. The protocol implements a non-fungible liquidity position model - each LP position is a unique NFT encoding the price range, liquidity amount, and accumulated fees. Swap routing occurs across tick boundaries, with each tick representing a discrete price point where liquidity composition changes.`
+  },
+  {
+    name: "Centrifuge",
+    text: `Centrifuge brings real-world assets on-chain by enabling originators to tokenize receivables, invoices, and structured credit into NFTs that serve as collateral in DeFi lending pools. Each asset is represented as a unique NFT containing a cryptographic hash of the legal documentation stored off-chain. Tinlake, Centrifuge's lending application, structures pools into senior (DROP) and junior (TIN) tranches - DROP token holders receive a fixed yield with priority on repayment, while TIN holders absorb first losses but earn excess spread. Pool issuers set risk parameters including advance rates, financing fees, and maturity limits. An on-chain NAV calculation continuously revalues the collateral portfolio based on expected cash flows, providing transparent pricing for both tranches.`
+  },
+  {
+    name: "Aave v3",
+    text: `Aave v3 introduces Efficiency Mode (E-Mode), which maximizes capital efficiency when supplied and borrowed assets are correlated in price. Within an E-Mode category, users can achieve higher loan-to-value ratios and lower liquidation thresholds than standard parameters allow. The protocol's risk framework assigns each asset a set of parameters: LTV, liquidation threshold, liquidation bonus, reserve factor, and supply/borrow caps. Health Factor, calculated as the ratio of risk-adjusted collateral value to outstanding debt, determines liquidation eligibility - a Health Factor below 1.0 triggers a liquidation event where third-party liquidators repay a portion of the debt in exchange for discounted collateral. Isolation Mode allows new or volatile assets to be listed with constrained exposure, limiting them to borrowing only specific stablecoins up to a defined debt ceiling.`
+  }
+];
+
+// ========== STATE ==========
+let currentMode = "banker";
+let isLoading = false;
+let lastResult = null;
+const FREE_LIMIT = 3;
+
+function getUsageCount() {
+  try { return parseInt(localStorage.getItem("wt_uses") || "0", 10); } catch { return 0; }
+}
+function incrementUsage() {
+  try { localStorage.setItem("wt_uses", String(getUsageCount() + 1)); } catch {}
+}
+function isUnlocked() {
+  try { return localStorage.getItem("wt_unlocked") === "true"; } catch { return false; }
+}
+function unlockApp() {
+  try { localStorage.setItem("wt_unlocked", "true"); } catch {}
+}
+function updateUsesDisplay() {
+  const el = document.getElementById("usesLeft");
+  if (isUnlocked()) { el.textContent = "Unlimited"; return; }
+  const remaining = Math.max(0, FREE_LIMIT - getUsageCount());
+  el.textContent = remaining + " free " + (remaining === 1 ? "translation" : "translations") + " left";
+}
+
+// ========== INIT ==========
+document.addEventListener("DOMContentLoaded", () => {
+  renderSamples();
+  updateUsesDisplay();
+  setupListeners();
+});
+
+function renderSamples() {
+  const container = document.getElementById("samples");
+  SAMPLES.forEach((s, i) => {
+    const btn = document.createElement("button");
+    btn.className = "sample-btn";
+    btn.textContent = s.name;
+    btn.addEventListener("click", () => selectSample(i));
+    container.appendChild(btn);
+  });
+}
+
+function selectSample(idx) {
+  document.getElementById("inputText").value = SAMPLES[idx].text;
+  updateCharCount();
+  document.querySelectorAll(".sample-btn").forEach((b, i) => {
+    b.classList.toggle("active", i === idx);
+  });
+}
+
+function setupListeners() {
+  const input = document.getElementById("inputText");
+  input.addEventListener("input", updateCharCount);
+
+  document.getElementById("bankerBtn").addEventListener("click", () => setMode("banker"));
+  document.getElementById("builderBtn").addEventListener("click", () => setMode("builder"));
+  document.getElementById("translateBtn").addEventListener("click", handleTranslate);
+  document.getElementById("copyBtn").addEventListener("click", handleCopy);
+  document.getElementById("emailSubmit").addEventListener("click", handleEmailSubmit);
+}
+
+function updateCharCount() {
+  const len = document.getElementById("inputText").value.length;
+  const el = document.getElementById("charCount");
+  el.textContent = len.toLocaleString() + " / 5,000";
+  el.classList.toggle("warn", len > 4500);
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById("bankerBtn").classList.toggle("active", mode === "banker");
+  document.getElementById("builderBtn").classList.toggle("active", mode === "builder");
+}
+
+// ========== TRANSLATE ==========
+async function handleTranslate() {
+  const text = document.getElementById("inputText").value.trim();
+  if (!text) return;
+  if (isLoading) return;
+
+  // Check gate
+  if (!isUnlocked() && getUsageCount() >= FREE_LIMIT) {
+    showEmailGate();
+    return;
+  }
+
+  isLoading = true;
+  document.getElementById("translateBtn").disabled = true;
+  document.getElementById("translateBtn").textContent = "Translating...";
+  showLoading();
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, mode: currentMode }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Translation failed");
+    }
+
+    const data = await res.json();
+    lastResult = data;
+    incrementUsage();
+    updateUsesDisplay();
+    renderResult(data);
+  } catch (err) {
+    renderError(err.message);
+  } finally {
+    isLoading = false;
+    document.getElementById("translateBtn").disabled = false;
+    document.getElementById("translateBtn").textContent = "Translate";
+  }
+}
+
+// ========== RENDER ==========
+function showLoading() {
+  const area = document.getElementById("outputArea");
+  area.innerHTML = `
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">translating between worlds...</div>
+    </div>
+  `;
+  document.getElementById("copyBtn").style.display = "none";
+}
+
+function showEmailGate() {
+  document.getElementById("outputArea").innerHTML = "";
+  document.getElementById("emailGate").classList.add("show");
+  document.getElementById("copyBtn").style.display = "none";
+}
+
+function renderError(msg) {
+  const area = document.getElementById("outputArea");
+  area.innerHTML = `
+    <div class="output-empty">
+      <p style="color: var(--orange);">Error: ${msg}</p>
+      <p style="margin-top: 0.5rem;">Try again or check that the text is a whitepaper excerpt.</p>
+    </div>
+  `;
+}
+
+function renderResult(data) {
+  document.getElementById("emailGate").classList.remove("show");
+  document.getElementById("copyBtn").style.display = "inline-flex";
+
+  const modeLabel = currentMode === "banker" ? "Banker Mode" : "Builder Mode";
+  const modeColor = currentMode === "banker" ? "var(--navy)" : "var(--orange)";
+
+  let glossaryHTML = "";
+  if (data.glossary && data.glossary.length) {
+    glossaryHTML = data.glossary.map(g => `
+      <div class="glossary-card">
+        <div class="glossary-term">${escapeHtml(g.term)}</div>
+        <div class="glossary-row">
+          <span class="glossary-row-label">Original</span>
+          <span class="glossary-row-value">${escapeHtml(g.original_meaning)}</span>
+        </div>
+        <div class="glossary-row">
+          <span class="glossary-row-label">Translated</span>
+          <span class="glossary-row-value">${escapeHtml(g.translated_meaning)}</span>
+        </div>
+        <div class="glossary-row">
+          <span class="glossary-row-label">Why</span>
+          <span class="glossary-row-value">${escapeHtml(g.why_it_matters)}</span>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  const area = document.getElementById("outputArea");
+  area.innerHTML = `
+    <div class="result">
+      <div style="display:inline-block; font-family: var(--font-mono); font-size: 0.65rem; padding: 0.25rem 0.6rem; border-radius: 4px; background: ${modeColor}; color: var(--white); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">${modeLabel}</div>
+
+      <div class="result-section">
+        <div class="result-label">Translation</div>
+        <div class="result-translation">${escapeHtml(data.translation)}</div>
+      </div>
+
+      ${data.glossary && data.glossary.length ? `
+      <div class="result-section">
+        <div class="result-label">Glossary</div>
+        <div class="glossary-grid">${glossaryHTML}</div>
+      </div>
+      ` : ""}
+
+      ${data.tension_note ? `
+      <div class="result-section">
+        <div class="result-label">The Gap</div>
+        <div class="tension-note">${escapeHtml(data.tension_note)}</div>
+      </div>
+      ` : ""}
+    </div>
+  `;
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ========== COPY ==========
+function handleCopy() {
+  if (!lastResult) return;
+  let text = "TRANSLATION:\n" + lastResult.translation + "\n\n";
+  if (lastResult.glossary) {
+    text += "GLOSSARY:\n";
+    lastResult.glossary.forEach(g => {
+      text += "- " + g.term + ": " + g.translated_meaning + " (originally: " + g.original_meaning + ")\n";
+    });
+    text += "\n";
+  }
+  if (lastResult.tension_note) {
+    text += "THE GAP:\n" + lastResult.tension_note + "\n";
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById("copyBtn");
+    const label = document.getElementById("copyLabel");
+    btn.classList.add("copied");
+    label.textContent = "Copied!";
+    setTimeout(() => { btn.classList.remove("copied"); label.textContent = "Copy"; }, 2000);
+  });
+}
+
+// ========== EMAIL GATE ==========
+function handleEmailSubmit() {
+  const email = document.getElementById("emailInput").value.trim();
+  if (!email || !email.includes("@")) return;
+  unlockApp();
+  updateUsesDisplay();
+  document.getElementById("emailGate").classList.remove("show");
+  // Show empty state again
+  document.getElementById("outputArea").innerHTML = `
+    <div class="output-empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <p style="color: #4ade80;">Unlocked! You now have unlimited translations.</p>
+    </div>
+  `;
+}
+</script>
+
+</body>
+</html>
