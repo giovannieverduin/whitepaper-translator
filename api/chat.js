@@ -1,0 +1,80 @@
+import Anthropic from "@anthropic-ai/sdk";
+
+const BANKER_PROMPT = `You are a translator between DeFi/Web3 protocols and traditional finance. Your job is to take whitepaper text written in crypto-native language and render it in the language of a senior banking executive - specifically someone who understands risk management, regulatory compliance, credit analysis, and institutional capital markets, but has limited exposure to blockchain mechanics.
+
+Rules:
+- Replace crypto jargon with nearest TradFi equivalents (e.g. "liquidity pool" becomes "market-making reserve," "smart contract" becomes "automated clearing contract," "governance token" becomes "voting equity")
+- Do NOT dumb it down. The audience is sophisticated. Replace the vocabulary, not the complexity.
+- Flag any concept that has NO TradFi equivalent and explain why the gap exists
+- Preserve technical precision. A wrong translation is worse than no translation.
+
+Respond ONLY in valid JSON: { "translation": string, "glossary": [{ "term": string, "original_meaning": string, "translated_meaning": string, "why_it_matters": string }], "tension_note": string }. No markdown. No preamble. JSON only.`;
+
+const BUILDER_PROMPT = `You are a translator between traditional finance concepts and DeFi/Web3 protocols. Your job is to take text written in banking or institutional finance language and render it in the language of a Web3-native builder - someone who thinks in smart contracts, tokenomics, trust minimisation, and decentralised governance.
+
+Rules:
+- Replace TradFi jargon with Web3-native equivalents (e.g. "transfer agent" becomes "compliance oracle layer," "settlement risk" becomes "atomic finality failure")
+- Be honest about where TradFi concepts have no clean Web3 mapping - these gaps are the most interesting
+- Flag the trust assumptions baked into traditional finance language that Web3 builders will immediately reject
+- Preserve the business logic. The point is not to be cynical about TradFi - it is to explain it fluently.
+
+Respond ONLY in valid JSON: { "translation": string, "glossary": [{ "term": string, "original_meaning": string, "translated_meaning": string, "why_it_matters": string }], "tension_note": string }. No markdown. No preamble. JSON only.`;
+
+const client = new Anthropic();
+
+export default async function handler(req, res) {
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  try {
+    const { text, mode } = req.body;
+
+    if (!text || !mode) {
+      return res.status(400).json({ error: "Missing text or mode" });
+    }
+
+    if (text.length > 5000) {
+      return res.status(400).json({ error: "Text too long. Max 5000 characters." });
+    }
+
+    const systemPrompt = mode === "banker" ? BANKER_PROMPT : BUILDER_PROMPT;
+    const modeLabel = mode === "banker" ? "TradFi/Banker" : "Web3/Builder";
+
+    const message = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages: [
+        {
+          role: "user",
+          content: `Translate the following whitepaper excerpt into ${modeLabel} language:\n\n${text}`,
+        },
+      ],
+    });
+
+    const rawText = message.content[0].text;
+
+    let parsed;
+    try {
+      parsed = JSON.parse(rawText);
+    } catch {
+      // Try to extract JSON from the response if it has extra text
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+      } else {
+        return res.status(500).json({ error: "Failed to parse AI response", raw: rawText });
+      }
+    }
+
+    return res.status(200).json(parsed);
+  } catch (error) {
+    console.error("API error:", error);
+    return res.status(500).json({ error: error.message || "Internal server error" });
+  }
+}
