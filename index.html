@@ -697,7 +697,23 @@ const NORMIE_SAMPLES = [
     name: "Quantitative Easing",
     text: `Quantitative easing is an unconventional monetary policy tool whereby a central bank purchases longer-duration government securities from the secondary market. The mechanism operates through portfolio rebalancing: by absorbing duration risk from the private sector, QE compresses term premia and reduces longer-term interest rates, lowering borrowing costs across the economy. The central bank finances these purchases by crediting the reserve accounts of selling institutions, expanding the monetary base.`
   }
-];
+,
+  {
+    name: "Basel III",
+    text: `The Basel III framework introduces a minimum Common Equity Tier 1 (CET1) capital ratio of 4.5%, a Tier 1 capital ratio of 6%, and a total capital ratio of 8%. Banks must maintain a capital conservation buffer of 2.5% of risk-weighted assets, composed entirely of CET1 capital. The countercyclical buffer allows national regulators to require up to an additional 2.5% of CET1 during periods of excessive credit growth. Global systemically important banks (G-SIBs) face additional loss absorbency requirements ranging from 1% to 3.5% of risk-weighted assets. The leverage ratio introduces a non-risk-based backstop, requiring Tier 1 capital of at least 3% of total exposure. The Liquidity Coverage Ratio (LCR) mandates that banks hold sufficient high-quality liquid assets to cover 30-day net cash outflows under stress.`
+  },
+  {
+    name: "Bitcoin",
+    text: `Bitcoin implements a peer-to-peer electronic cash system using a proof-of-work consensus mechanism based on the SHA-256 hashing algorithm. Transactions are broadcast to the network and grouped into blocks by miners who compete to solve a cryptographic puzzle. The difficulty adjusts every 2,016 blocks to maintain an approximate 10-minute block interval. The block subsidy halves approximately every 210,000 blocks, creating a disinflationary monetary policy with a hard cap of 21 million BTC. Unspent transaction outputs (UTXOs) form the basis of Bitcoin accounting. Script opcodes enable programmable spending conditions including multi-signature schemes, timelocks, and hash time-locked contracts (HTLCs) that underpin the Lightning Network payment channel architecture.`
+  },
+  {
+    name: "Uniswap",
+    text: `Uniswap v3 introduces concentrated liquidity, allowing liquidity providers (LPs) to allocate capital within custom price ranges rather than across the entire price curve. This is implemented through a system of ticks that discretize the price space, where each tick represents a 0.01% price movement. LPs mint non-fungible liquidity positions defined by a token pair, fee tier, and upper/lower tick boundaries. The constant product formula x*y=k applies within each active tick range, and fees accrue only to positions whose range includes the current price. When the price crosses a tick boundary, the contract activates or deactivates the corresponding liquidity. Oracle improvements provide time-weighted average prices (TWAPs) computed on-chain using cumulative tick accumulators.`
+  },
+  {
+    name: "Fund Prospectus",
+    text: `The Fund seeks long-term capital appreciation by investing primarily in equity securities of companies with market capitalizations exceeding $10 billion at the time of purchase. The Fund may invest up to 20% of net assets in foreign securities, including American Depositary Receipts (ADRs). The management fee is 0.75% of average daily net assets, with a total expense ratio capped at 1.15% pursuant to an expense limitation agreement effective through December 31, 2026. Shares are offered at net asset value (NAV) plus a maximum front-end sales load of 5.75% for Class A shares. Class I shares have no sales load but require a minimum initial investment of $1,000,000. The Fund may use derivatives, including options and futures contracts, for hedging purposes and to manage portfolio duration.`
+  }];
 
 // ========== STATE ==========
 let currentLane = "banker"; // "banker" = crypto->banker, "builder" = banking->builder
