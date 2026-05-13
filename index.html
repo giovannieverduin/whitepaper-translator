@@ -107,9 +107,27 @@
       grid-template-columns: 1fr 1fr;
       gap: 2rem;
     }
-    @media (max-width: 860px) {
-      .app { grid-template-columns: 1fr; }
-    }
+@media (max-width: 860px) {
+        .app { grid-template-columns: 1fr; padding: 1rem; gap: 1.5rem; }
+              .hero { padding: 1.5rem 1rem; }
+                    .hero h1 { font-size: 1.6rem; }
+                          .hero p { font-size: 0.85rem; }
+                                .panel { padding: 1rem; }
+                                      .panel-header { flex-wrap: wrap; gap: 0.5rem; }
+                                            .lane-toggle { width: 100%; }
+                                                  .lane-toggle button { flex: 1; font-size: 0.7rem; padding: 0.5rem; }
+                                                        .samples { gap: 0.4rem; }
+                                                              .samples button { font-size: 0.65rem; padding: 0.3rem 0.6rem; }
+                                                                    .input-area { min-height: 180px; font-size: 0.85rem; }
+                                                                          .output-area { font-size: 0.9rem; }
+                                                                                .action-btns { flex-wrap: wrap; }
+                                                                                      .translate-btn { font-size: 0.85rem; padding: 0.8rem; }
+                                                                                            .top-bar { padding: 0.5rem 1rem; }
+                                                                                                  .top-bar a { font-size: 0.7rem; }
+                                                                                                        .glossary-item { padding: 0.75rem; }
+                                                                                                              .glossary-term { font-size: 0.85rem; }
+                                                                                                                  }
+}
 
     /* PANELS */
     .panel {
@@ -373,7 +391,7 @@
       color: var(--gray-400);
       cursor: pointer;
       transition: all 0.2s;
-    }
+    
     .copy-btn:hover, .pdf-btn:hover { border-color: var(--orange); color: var(--white); }
     .copy-btn.copied { border-color: #4ade80; color: #4ade80; }
     .pdf-btn { background: rgba(255,107,43,0.12); border-color: rgba(255,107,43,0.3); color: var(--orange); }
@@ -587,7 +605,7 @@ let currentLane = "banker"; // "banker" = crypto->banker, "builder" = banking->b
 let isLoading = false;
 let lastResult = null;
 let lastInputText = "";
-const FREE_LIMIT = 3;
+const FREE_LIMIT = 5;
 
 function getUsageCount() {
   try { return parseInt(localStorage.getItem("wt_uses") || "0", 10); } catch { return 0; }
@@ -997,7 +1015,7 @@ function handlePdfExport() {
     doc.text("Page " + i + " of " + pageCount, W - margin, 289, { align: "right" });
   }
 
-  doc.save("whitepaper-translation.pdf");
+  window.open(doc.output('bloburl'), '_blank');
 }
 
 function addPageHeader(doc, W, margin) {
