@@ -13,8 +13,8 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --charcoal: #111111;
-      --navy: #0E3460;
+      --charcoal: #1A1A2E
+      --navy: #0E3460
       --orange: #FF6B2B;
       --white: #FFFFFF;
       --gray-100: #F5F5F5;
@@ -376,7 +376,8 @@
     }
     .copy-btn:hover, .pdf-btn:hover { border-color: var(--orange); color: var(--white); }
     .copy-btn.copied { border-color: #4ade80; color: #4ade80; }
-    .pdf-btn:hover { border-color: var(--orange); color: var(--orange); }
+    .pdf-btn { background: rgba(255,107,43,0.12); border-color: rgba(255,107,43,0.3); color: var(--orange); }
+        .pdf-btn:hover { background: rgba(255,107,43,0.22); border-color: var(--orange); color: var(--orange); }
 
     /* EMAIL GATE */
     .email-gate {
