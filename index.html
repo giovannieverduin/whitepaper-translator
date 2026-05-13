@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Outfit:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -130,6 +131,43 @@
       letter-spacing: -0.01em;
     }
 
+    /* LANE TOGGLE */
+    .lane-toggle {
+      display: flex;
+      background: var(--charcoal);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+      margin-bottom: 1rem;
+    }
+    .lane-btn {
+      flex: 1;
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.55rem 0.5rem;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--gray-400);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      line-height: 1.3;
+    }
+    .lane-btn.active-banker {
+      background: var(--navy);
+      color: var(--white);
+    }
+    .lane-btn.active-builder {
+      background: var(--orange);
+      color: var(--charcoal);
+    }
+    .lane-arrow {
+      font-size: 0.8rem;
+      margin: 0 0.15rem;
+    }
+
     /* SAMPLE SELECTOR */
     .samples {
       display: flex;
@@ -139,9 +177,9 @@
     }
     .sample-btn {
       font-family: var(--font-body);
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 500;
-      padding: 0.4rem 0.75rem;
+      padding: 0.4rem 0.7rem;
       border-radius: 6px;
       border: 1px solid rgba(255,255,255,0.1);
       background: transparent;
@@ -162,14 +200,14 @@
     /* TEXTAREA */
     .input-area {
       width: 100%;
-      min-height: 280px;
+      min-height: 260px;
       background: var(--charcoal);
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 8px;
       padding: 1rem;
       color: var(--white);
       font-family: var(--font-body);
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       line-height: 1.7;
       resize: vertical;
       outline: none;
@@ -187,36 +225,6 @@
       margin-top: 0.5rem;
     }
     .char-count.warn { color: var(--orange); }
-
-    /* MODE TOGGLE */
-    .mode-toggle {
-      display: flex;
-      background: var(--charcoal);
-      border-radius: 8px;
-      padding: 3px;
-      gap: 3px;
-    }
-    .mode-btn {
-      flex: 1;
-      font-family: var(--font-body);
-      font-size: 0.8rem;
-      font-weight: 600;
-      padding: 0.55rem 1rem;
-      border-radius: 6px;
-      border: none;
-      background: transparent;
-      color: var(--gray-400);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .mode-btn.active {
-      background: var(--navy);
-      color: var(--white);
-    }
-    .mode-btn.active.builder {
-      background: var(--orange);
-      color: var(--charcoal);
-    }
 
     /* TRANSLATE BUTTON */
     .translate-btn {
@@ -346,8 +354,13 @@
       font-style: italic;
     }
 
-    /* COPY BUTTON */
-    .copy-btn {
+    /* ACTION BUTTONS */
+    .action-btns {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .copy-btn, .pdf-btn {
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
@@ -361,8 +374,9 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .copy-btn:hover { border-color: var(--orange); color: var(--white); }
+    .copy-btn:hover, .pdf-btn:hover { border-color: var(--orange); color: var(--white); }
     .copy-btn.copied { border-color: #4ade80; color: #4ade80; }
+    .pdf-btn:hover { border-color: var(--orange); color: var(--orange); }
 
     /* EMAIL GATE */
     .email-gate {
@@ -449,7 +463,7 @@
 
 <div class="hero">
   <h1>The Whitepaper <em>Translator</em></h1>
-  <p>Paste any DeFi or RWA whitepaper excerpt. Pick a mode. Get it translated into the language of the other world.</p>
+  <p>Paste any DeFi whitepaper or banking document. Get it translated into the language of the other world.</p>
 </div>
 
 <div class="app">
@@ -460,38 +474,44 @@
       <span class="uses-left" id="usesLeft"></span>
     </div>
 
+    <!-- LANE TOGGLE -->
+    <div class="lane-toggle">
+      <button class="lane-btn active-banker" id="laneBanker" data-lane="banker">
+        Crypto <span class="lane-arrow">&rarr;</span> Banker
+      </button>
+      <button class="lane-btn" id="laneBuilder" data-lane="builder">
+        Banking <span class="lane-arrow">&rarr;</span> Builder
+      </button>
+    </div>
+
     <div class="samples" id="samples"></div>
 
     <textarea class="input-area" id="inputText" placeholder="Paste a whitepaper excerpt here, or select a sample above..." maxlength="5000"></textarea>
     <div class="char-count" id="charCount">0 / 5,000</div>
 
-    <div style="margin-top: 1rem;">
-      <div class="panel-header" style="margin-bottom: 0.5rem;">
-        <span class="panel-title">Translation Mode</span>
-      </div>
-      <div class="mode-toggle">
-        <button class="mode-btn active" data-mode="banker" id="bankerBtn">Banker Mode</button>
-        <button class="mode-btn builder" data-mode="builder" id="builderBtn">Builder Mode</button>
-      </div>
-    </div>
-
-    <button class="translate-btn" id="translateBtn">Translate</button>
+    <button class="translate-btn" id="translateBtn">Translate to Banker</button>
   </div>
 
   <!-- RIGHT PANEL: OUTPUT -->
   <div class="panel">
     <div class="panel-header">
       <span class="panel-title">Translation</span>
-      <button class="copy-btn" id="copyBtn" style="display:none;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        <span id="copyLabel">Copy</span>
-      </button>
+      <div class="action-btns" id="actionBtns" style="display:none;">
+        <button class="copy-btn" id="copyBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span id="copyLabel">Copy</span>
+        </button>
+        <button class="pdf-btn" id="pdfBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span>Save PDF</span>
+        </button>
+      </div>
     </div>
 
     <div id="outputArea">
       <div class="output-empty" id="emptyState">
-           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-        <p>Select a sample or paste your own text, pick a mode, and hit Translate.</p>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <p>Select a sample or paste your own text, then hit Translate.</p>
       </div>
     </div>
 
@@ -510,38 +530,62 @@
 
 <footer>
   <div class="footer-brand">GIO<span>/</span></div>
-  <div class="footer-sub">Built in public by <a href="https://giovannieverduin.com">Giovanni Everduin</a></div>
+  <div class="footer-sub">Built in public by <a href="https://giovannieverduin.com">Giovanni Everduin</a> &middot; <a href="https://x.com/geverduin">@geverduin</a></div>
 </footer>
 
 <script>
-// ========== SAMPLE WHITEPAPERS ==========
-const SAMPLES = [
+// ========== SAMPLE DATA ==========
+const CRYPTO_SAMPLES = [
   {
-    name: "BlackRock BUIDL",
-    text: `The BlackRock USD Institutional Digital Liquidity Fund (BUIDL) is a tokenized money market fund that invests in U.S. Treasury bills, repurchase agreements, and cash. Each token represents one share of the fund and targets a stable value of $1.00 per token. Dividends accrue daily and are distributed monthly via new token issuance. The fund operates on the Ethereum blockchain and utilizes a permissioned smart contract architecture - only whitelisted addresses verified through KYC/AML procedures can hold or transfer tokens. Securitize serves as the transfer agent and tokenization platform, maintaining an on-chain registry of eligible investors. Secondary transfers between whitelisted wallets settle atomically on-chain, eliminating traditional T+1 settlement delays.`
+    name: "Bitcoin",
+    text: `A purely peer-to-peer version of electronic cash would allow online payments to be sent directly from one party to another without going through a financial institution. Digital signatures provide part of the solution, but the main benefits are lost if a trusted third party is still required to prevent double-spending. We propose a solution to the double-spending problem using a peer-to-peer network. The network timestamps transactions by hashing them into an ongoing chain of hash-based proof-of-work, forming a record that cannot be changed without redoing the proof-of-work. The longest chain not only serves as proof of the sequence of events witnessed, but proof that it came from the largest pool of CPU power. As long as a majority of CPU power is controlled by nodes that are not cooperating to attack the network, they will generate the longest chain and outpace attackers.`
   },
   {
-    name: "Ondo Finance",
-    text: `OUSG (Ondo Short-Term U.S. Government Bond Fund) provides tokenized exposure to short-duration U.S. Treasuries. The fund invests substantially all of its assets in the BlackRock USD Institutional Digital Liquidity Fund (BUIDL), creating a composable DeFi wrapper around an institutional-grade money market product. Token holders can mint and redeem OUSG through Ondo's smart contracts, with instant minting available during market hours. The protocol enforces transfer restrictions through an on-chain allowlist managed by Ondo's compliance layer. rOUSG, a rebasing variant, automatically distributes yield by increasing token balances daily. Flux Finance, an Ondo-affiliated lending protocol, accepts OUSG as collateral, enabling holders to borrow stablecoins against their tokenized Treasury position without liquidating the underlying asset.`
+    name: "Ethereum",
+    text: `The intent of Ethereum is to create an alternative protocol for building decentralized applications, providing a different set of tradeoffs that will be useful for a large class of decentralized applications. Ethereum does this by building what is essentially the ultimate abstract foundational layer: a blockchain with a built-in Turing-complete programming language, allowing anyone to write smart contracts and decentralized applications where they can create their own arbitrary rules for ownership, transaction formats, and state transition functions. A bare-bones version of Namecoin can be written in two lines of code, and other protocols like currencies and reputation systems can be built in under twenty. Smart contracts, cryptographic boxes that contain value and only unlock it if certain conditions are met, can also be built on top of the platform, with vastly more power than that offered by Bitcoin scripting because of the added powers of Turing-completeness, value-awareness, blockchain-awareness, and state.`
   },
   {
     name: "Uniswap v3",
-    text: `Uniswap v3 introduces concentrated liquidity, allowing liquidity providers (LPs) to allocate capital within custom price ranges rather than across the full 0 to infinity spectrum. This mechanism creates individual positions that aggregate into a single pool, functioning as a series of constant product curves along user-defined intervals. LPs earn trading fees proportional to their share of liquidity at the current price, enabling up to 4,000x capital efficiency compared to v2. The protocol implements a non-fungible liquidity position model - each LP position is a unique NFT encoding the price range, liquidity amount, and accumulated fees. Swap routing occurs across tick boundaries, with each tick representing a discrete price point where liquidity composition changes.`
+    text: `Uniswap v3 introduces concentrated liquidity, allowing liquidity providers to allocate capital within custom price ranges rather than across the full zero to infinity spectrum. This mechanism creates individual positions that aggregate into a single pool, functioning as a series of constant product curves along user-defined intervals. LPs earn trading fees proportional to their share of liquidity at the current price, enabling up to 4,000x capital efficiency compared to v2. The protocol implements a non-fungible liquidity position model - each LP position is a unique NFT encoding the price range, liquidity amount, and accumulated fees. Swap routing occurs across tick boundaries, with each tick representing a discrete price point where liquidity composition changes. Multiple fee tiers allow pools to be appropriately calibrated for different asset pair volatility profiles.`
   },
   {
-    name: "Centrifuge",
-    text: `Centrifuge brings real-world assets on-chain by enabling originators to tokenize receivables, invoices, and structured credit into NFTs that serve as collateral in DeFi lending pools. Each asset is represented as a unique NFT containing a cryptographic hash of the legal documentation stored off-chain. Tinlake, Centrifuge's lending application, structures pools into senior (DROP) and junior (TIN) tranches - DROP token holders receive a fixed yield with priority on repayment, while TIN holders absorb first losses but earn excess spread. Pool issuers set risk parameters including advance rates, financing fees, and maturity limits. An on-chain NAV calculation continuously revalues the collateral portfolio based on expected cash flows, providing transparent pricing for both tranches.`
+    name: "Polygon Miden",
+    text: `Polygon Miden is a STARK-based zero-knowledge rollup designed to extend Ethereum's capabilities while preserving its security guarantees. At its core is the Miden Virtual Machine, the first fully open-source STARK-based VM that supports arbitrary program execution. For any program executed on the VM, a small cryptographic proof of correctness is automatically generated. This proof can then be used by anyone to verify that the program was executed correctly, without the need for re-executing the program or even knowing what the program was. The VM has been specifically optimized for STARKs, enabling fast proof generation even on commodity hardware. Miden introduces client-side proving, where users generate proofs locally on their own devices, enabling private state transitions and parallel transaction execution without global state contention.`
   },
   {
-    name: "Aave v3",
-    text: `Aave v3 introduces Efficiency Mode (E-Mode), which maximizes capital efficiency when supplied and borrowed assets are correlated in price. Within an E-Mode category, users can achieve higher loan-to-value ratios and lower liquidation thresholds than standard parameters allow. The protocol's risk framework assigns each asset a set of parameters: LTV, liquidation threshold, liquidation bonus, reserve factor, and supply/borrow caps. Health Factor, calculated as the ratio of risk-adjusted collateral value to outstanding debt, determines liquidation eligibility - a Health Factor below 1.0 triggers a liquidation event where third-party liquidators repay a portion of the debt in exchange for discounted collateral. Isolation Mode allows new or volatile assets to be listed with constrained exposure, limiting them to borrowing only specific stablecoins up to a defined debt ceiling.`
+    name: "BlackRock BUIDL",
+    text: `The BlackRock USD Institutional Digital Liquidity Fund (BUIDL) is a tokenized money market fund that invests in U.S. Treasury bills, repurchase agreements, and cash. Each token represents one share of the fund and targets a stable value of $1.00 per token. Dividends accrue daily and are distributed monthly via new token issuance. The fund operates on multiple blockchains including Ethereum, Solana, and Avalanche, utilizing a permissioned smart contract architecture - only whitelisted addresses verified through KYC/AML procedures can hold or transfer tokens. Securitize serves as the transfer agent and tokenization platform, maintaining an on-chain registry of eligible investors. Secondary transfers between whitelisted wallets settle atomically on-chain, eliminating traditional T+1 settlement delays.`
+  }
+];
+
+const BANKING_SAMPLES = [
+  {
+    name: "Basel III Capital",
+    text: `Common Equity Tier 1 capital is the highest quality of regulatory capital, as it absorbs losses immediately when they occur. Under the Basel III framework, banks must maintain a minimum CET1 ratio of 4.5% of risk-weighted assets, plus a capital conservation buffer of 2.5%, bringing the effective minimum to 7.0%. Systemically important financial institutions face an additional surcharge of 1.0% to 3.5% depending on their systemic footprint. The leverage ratio requirement establishes a non-risk-based backstop, mandating that Tier 1 capital must equal at least 3% of total exposure. Countercyclical capital buffers of up to 2.5% may be imposed by national authorities during periods of excess credit growth to ensure banks build up additional defenses in good times that can be drawn upon during stress.`
+  },
+  {
+    name: "ISDA Master Agreement",
+    text: `Upon the occurrence and during the continuance of an Event of Default, the Non-defaulting Party may designate an Early Termination Date in respect of all outstanding Transactions. Close-out netting operates by calculating a single net amount payable between the parties, aggregating the mark-to-market values of all terminated Transactions. The Close-out Amount is determined by the Determining Party using commercially reasonable procedures, which may include obtaining quotations from Reference Market-makers or using relevant market data. The Credit Support Annex requires each party to deliver Eligible Collateral when its Exposure exceeds the agreed Threshold, with a Minimum Transfer Amount to avoid operationally burdensome small transfers. Variation Margin must be exchanged daily, valued at mid-market, and subject to agreed Haircuts reflecting price and liquidity risk.`
+  },
+  {
+    name: "Fed Stress Test (CCAR)",
+    text: `The Comprehensive Capital Analysis and Review is an annual exercise by the Federal Reserve to assess whether the largest bank holding companies operating in the United States have sufficient capital to continue operations throughout times of economic and financial stress. Under the severely adverse scenario, the Board projects a peak-to-trough decline in real GDP of approximately 8.5%, unemployment rising to 10%, a 55% decline in equity prices, and significant widening of corporate bond spreads. Banks must demonstrate that their Common Equity Tier 1 ratio remains above 4.5% throughout the planning horizon under stress. The Stress Capital Buffer requirement integrates non-stress regulatory capital requirements with stress-test-based capital requirements, replacing the prior static capital conservation buffer with a firm-specific dynamic buffer.`
+  },
+  {
+    name: "Syndicated Loan Facility",
+    text: `The Facility Agent shall make available to the Borrower a multicurrency revolving credit facility in an aggregate principal amount not exceeding USD 500,000,000. Utilisation is subject to satisfaction of Conditions Precedent, including delivery of legal opinions, corporate authorisations, and evidence of no Material Adverse Change. Each Lender's commitment shall be reduced pro rata upon any voluntary or mandatory prepayment. The Borrower shall maintain a Consolidated Net Leverage Ratio not exceeding 3.5x and an Interest Coverage Ratio of not less than 3.0x, tested quarterly on a rolling twelve-month basis. Mandatory prepayment events include Change of Control, disposal of Substantial Assets, and receipt of Insurance Proceeds exceeding the Threshold Amount. The Margin ratchet adjusts quarterly based on the prevailing Leverage Ratio, ranging from 125 basis points to 275 basis points.`
+  },
+  {
+    name: "Fund Prospectus (SEC)",
+    text: `The Fund seeks to maximize current income consistent with preservation of capital and daily liquidity by investing in a diversified portfolio of high-quality, short-term, U.S. dollar-denominated money market instruments. The Fund invests at least 99.5% of its total assets in cash, U.S. Treasury securities, and repurchase agreements collateralized by U.S. Government obligations. The Fund values its securities using the amortized cost method, which approximates market value. The Fund seeks to maintain a stable Net Asset Value of $1.00 per share; however, it is possible to lose money by investing in the Fund. The Board of Directors has adopted procedures designed to stabilize the Fund's NAV at $1.00, including the ability to impose a liquidity fee of up to 2% on redemptions or to temporarily suspend redemptions if the Fund's weekly liquid assets fall below 30% of total assets.`
   }
 ];
 
 // ========== STATE ==========
-let currentMode = "banker";
+let currentLane = "banker"; // "banker" = crypto->banker, "builder" = banking->builder
 let isLoading = false;
 let lastResult = null;
+let lastInputText = "";
 const FREE_LIMIT = 3;
 
 function getUsageCount() {
@@ -570,9 +614,15 @@ document.addEventListener("DOMContentLoaded", () => {
   setupListeners();
 });
 
+function getCurrentSamples() {
+  return currentLane === "banker" ? CRYPTO_SAMPLES : BANKING_SAMPLES;
+}
+
 function renderSamples() {
   const container = document.getElementById("samples");
-  SAMPLES.forEach((s, i) => {
+  container.innerHTML = "";
+  const samples = getCurrentSamples();
+  samples.forEach((s, i) => {
     const btn = document.createElement("button");
     btn.className = "sample-btn";
     btn.textContent = s.name;
@@ -582,21 +632,40 @@ function renderSamples() {
 }
 
 function selectSample(idx) {
-  document.getElementById("inputText").value = SAMPLES[idx].text;
+  const samples = getCurrentSamples();
+  document.getElementById("inputText").value = samples[idx].text;
   updateCharCount();
   document.querySelectorAll(".sample-btn").forEach((b, i) => {
     b.classList.toggle("active", i === idx);
   });
 }
 
+function setLane(lane) {
+  currentLane = lane;
+  const bankerBtn = document.getElementById("laneBanker");
+  const builderBtn = document.getElementById("laneBuilder");
+
+  bankerBtn.className = "lane-btn" + (lane === "banker" ? " active-banker" : "");
+  builderBtn.className = "lane-btn" + (lane === "builder" ? " active-builder" : "");
+
+  const translateBtn = document.getElementById("translateBtn");
+  translateBtn.textContent = lane === "banker" ? "Translate to Banker" : "Translate to Builder";
+
+  // Clear input and re-render samples
+  document.getElementById("inputText").value = "";
+  updateCharCount();
+  renderSamples();
+}
+
 function setupListeners() {
   const input = document.getElementById("inputText");
   input.addEventListener("input", updateCharCount);
 
-  document.getElementById("bankerBtn").addEventListener("click", () => setMode("banker"));
-  document.getElementById("builderBtn").addEventListener("click", () => setMode("builder"));
+  document.getElementById("laneBanker").addEventListener("click", () => setLane("banker"));
+  document.getElementById("laneBuilder").addEventListener("click", () => setLane("builder"));
   document.getElementById("translateBtn").addEventListener("click", handleTranslate);
   document.getElementById("copyBtn").addEventListener("click", handleCopy);
+  document.getElementById("pdfBtn").addEventListener("click", handlePdfExport);
   document.getElementById("emailSubmit").addEventListener("click", handleEmailSubmit);
 }
 
@@ -607,34 +676,28 @@ function updateCharCount() {
   el.classList.toggle("warn", len > 4500);
 }
 
-function setMode(mode) {
-  currentMode = mode;
-  document.getElementById("bankerBtn").classList.toggle("active", mode === "banker");
-  document.getElementById("builderBtn").classList.toggle("active", mode === "builder");
-}
-
 // ========== TRANSLATE ==========
 async function handleTranslate() {
   const text = document.getElementById("inputText").value.trim();
   if (!text) return;
   if (isLoading) return;
 
-  // Check gate
   if (!isUnlocked() && getUsageCount() >= FREE_LIMIT) {
     showEmailGate();
     return;
   }
 
   isLoading = true;
-  document.getElementById("translateBtn").disabled = true;
-  document.getElementById("translateBtn").textContent = "Translating...";
+  const translateBtn = document.getElementById("translateBtn");
+  translateBtn.disabled = true;
+  translateBtn.textContent = "Translating...";
   showLoading();
 
   try {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, mode: currentMode }),
+      body: JSON.stringify({ text, mode: currentLane }),
     });
 
     if (!res.ok) {
@@ -644,6 +707,7 @@ async function handleTranslate() {
 
     const data = await res.json();
     lastResult = data;
+    lastInputText = text;
     incrementUsage();
     updateUsesDisplay();
     renderResult(data);
@@ -651,8 +715,8 @@ async function handleTranslate() {
     renderError(err.message);
   } finally {
     isLoading = false;
-    document.getElementById("translateBtn").disabled = false;
-    document.getElementById("translateBtn").textContent = "Translate";
+    translateBtn.disabled = false;
+    translateBtn.textContent = currentLane === "banker" ? "Translate to Banker" : "Translate to Builder";
   }
 }
 
@@ -665,13 +729,13 @@ function showLoading() {
       <div class="loading-text">translating between worlds...</div>
     </div>
   `;
-  document.getElementById("copyBtn").style.display = "none";
+  document.getElementById("actionBtns").style.display = "none";
 }
 
 function showEmailGate() {
   document.getElementById("outputArea").innerHTML = "";
   document.getElementById("emailGate").classList.add("show");
-  document.getElementById("copyBtn").style.display = "none";
+  document.getElementById("actionBtns").style.display = "none";
 }
 
 function renderError(msg) {
@@ -679,17 +743,17 @@ function renderError(msg) {
   area.innerHTML = `
     <div class="output-empty">
       <p style="color: var(--orange);">Error: ${msg}</p>
-      <p style="margin-top: 0.5rem;">Try again or check that the text is a whitepaper excerpt.</p>
+      <p style="margin-top: 0.5rem;">Try again or check that the text is a valid excerpt.</p>
     </div>
   `;
 }
 
 function renderResult(data) {
   document.getElementById("emailGate").classList.remove("show");
-  document.getElementById("copyBtn").style.display = "inline-flex";
+  document.getElementById("actionBtns").style.display = "flex";
 
-  const modeLabel = currentMode === "banker" ? "Banker Mode" : "Builder Mode";
-  const modeColor = currentMode === "banker" ? "var(--navy)" : "var(--orange)";
+  const modeLabel = currentLane === "banker" ? "Banker Mode" : "Builder Mode";
+  const modeColor = currentLane === "banker" ? "var(--navy)" : "var(--orange)";
 
   let glossaryHTML = "";
   if (data.glossary && data.glossary.length) {
@@ -769,6 +833,185 @@ function handleCopy() {
   });
 }
 
+// ========== PDF EXPORT ==========
+function handlePdfExport() {
+  if (!lastResult) return;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const W = 210;
+  const margin = 20;
+  const contentW = W - margin * 2;
+  let y = 0;
+
+  // -- HEADER BANNER --
+  doc.setFillColor(255, 107, 43); // orange
+  doc.rect(0, 0, W, 22, "F");
+
+  // GIO/ brand
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(255, 255, 255);
+  doc.text("GIO/", margin, 14);
+
+  // Header right text
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.text("The Whitepaper Translator", W - margin, 10, { align: "right" });
+  doc.text("translator.giovannieverduin.com", W - margin, 15, { align: "right" });
+
+  y = 32;
+
+  // -- MODE BADGE --
+  const modeLabel = currentLane === "banker" ? "BANKER MODE" : "BUILDER MODE";
+  if (currentLane === "banker") {
+    doc.setFillColor(14, 52, 96);
+  } else {
+    doc.setFillColor(255, 107, 43);
+  }
+  doc.roundedRect(margin, y, 32, 6, 1.5, 1.5, "F");
+  doc.setFont("courier", "normal");
+  doc.setFontSize(6.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(modeLabel, margin + 16, y + 4.2, { align: "center" });
+
+  y += 14;
+
+  // -- TRANSLATION SECTION --
+  doc.setFont("courier", "normal");
+  doc.setFontSize(7);
+  doc.setTextColor(255, 107, 43);
+  doc.text("TRANSLATION", margin, y);
+  y += 5;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(51, 51, 51);
+  const transLines = doc.splitTextToSize(lastResult.translation || "", contentW);
+  transLines.forEach(line => {
+    if (y > 270) { doc.addPage(); y = addPageHeader(doc, W, margin); }
+    doc.text(line, margin, y);
+    y += 5;
+  });
+
+  y += 8;
+
+  // -- GLOSSARY --
+  if (lastResult.glossary && lastResult.glossary.length) {
+    if (y > 240) { doc.addPage(); y = addPageHeader(doc, W, margin); }
+    doc.setFont("courier", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(255, 107, 43);
+    doc.text("GLOSSARY", margin, y);
+    y += 6;
+
+    lastResult.glossary.forEach(g => {
+      if (y > 255) { doc.addPage(); y = addPageHeader(doc, W, margin); }
+
+      // Term
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(255, 107, 43);
+      doc.text(g.term || "", margin, y);
+      y += 5;
+
+      // Original
+      doc.setFont("courier", "normal");
+      doc.setFontSize(6.5);
+      doc.setTextColor(136, 136, 136);
+      doc.text("ORIGINAL", margin, y);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(68, 68, 68);
+      const origLines = doc.splitTextToSize(g.original_meaning || "", contentW - 25);
+      origLines.forEach(l => { doc.text(l, margin + 22, y); y += 4; });
+      y += 1;
+
+      // Translated
+      doc.setFont("courier", "normal");
+      doc.setFontSize(6.5);
+      doc.setTextColor(136, 136, 136);
+      doc.text("TRANSLATED", margin, y);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(68, 68, 68);
+      const transGLines = doc.splitTextToSize(g.translated_meaning || "", contentW - 25);
+      transGLines.forEach(l => { doc.text(l, margin + 22, y); y += 4; });
+      y += 1;
+
+      // Why
+      doc.setFont("courier", "normal");
+      doc.setFontSize(6.5);
+      doc.setTextColor(136, 136, 136);
+      doc.text("WHY", margin, y);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(68, 68, 68);
+      const whyLines = doc.splitTextToSize(g.why_it_matters || "", contentW - 25);
+      whyLines.forEach(l => { doc.text(l, margin + 22, y); y += 4; });
+      y += 5;
+    });
+  }
+
+  y += 4;
+
+  // -- TENSION NOTE --
+  if (lastResult.tension_note) {
+    if (y > 240) { doc.addPage(); y = addPageHeader(doc, W, margin); }
+    doc.setFont("courier", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(255, 107, 43);
+    doc.text("THE GAP", margin, y);
+    y += 5;
+
+    // Left border accent
+    doc.setDrawColor(14, 52, 96);
+    doc.setLineWidth(0.8);
+    const gapLines = doc.splitTextToSize(lastResult.tension_note, contentW - 6);
+    const gapStartY = y;
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(68, 68, 68);
+    gapLines.forEach(l => {
+      if (y > 270) { doc.addPage(); y = addPageHeader(doc, W, margin); }
+      doc.text(l, margin + 4, y);
+      y += 4.5;
+    });
+    doc.line(margin, gapStartY - 3, margin, y - 1);
+  }
+
+  // -- FOOTER --
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    // Bottom line
+    doc.setDrawColor(230, 230, 230);
+    doc.setLineWidth(0.3);
+    doc.line(margin, 284, W - margin, 284);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(170, 170, 170);
+    doc.text("GIO/ The Whitepaper Translator  -  @geverduin  -  translator.giovannieverduin.com", margin, 289);
+    doc.text("Page " + i + " of " + pageCount, W - margin, 289, { align: "right" });
+  }
+
+  doc.save("whitepaper-translation.pdf");
+}
+
+function addPageHeader(doc, W, margin) {
+  doc.setFillColor(255, 107, 43);
+  doc.rect(0, 0, W, 12, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.text("GIO/", margin, 8);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.text("The Whitepaper Translator", W - margin, 8, { align: "right" });
+  return 22;
+}
+
 // ========== EMAIL GATE ==========
 function handleEmailSubmit() {
   const email = document.getElementById("emailInput").value.trim();
@@ -776,7 +1019,6 @@ function handleEmailSubmit() {
   unlockApp();
   updateUsesDisplay();
   document.getElementById("emailGate").classList.remove("show");
-  // Show empty state again
   document.getElementById("outputArea").innerHTML = `
     <div class="output-empty">
       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
