@@ -181,6 +181,10 @@
       background: var(--orange);
       color: var(--charcoal);
     }
+    .lane-btn.active-normie {
+      background: var(--white);
+      color: var(--orange);
+    }
     .lane-arrow {
       font-size: 0.8rem;
       margin: 0 0.15rem;
@@ -518,7 +522,7 @@
 
 <div class="hero">
   <h1>The Whitepaper <em>Translator</em></h1>
-  <p>Paste any DeFi whitepaper or banking document. Get it translated into the language of the other world.</p>
+  <p>Paste any DeFi whitepaper or banking document. Get it translated into banker, builder, or plain human language.</p>
 </div>
 
 <div class="app">
@@ -536,6 +540,9 @@
       </button>
       <button class="lane-btn" id="laneBuilder" data-lane="builder">
         Banking <span class="lane-arrow">&rarr;</span> Builder
+      </button>
+      <button class="lane-btn" id="laneNormie" data-lane="normie">
+        Normie <span class="lane-arrow">&rarr;</span> Mode
       </button>
     </div>
 
@@ -668,6 +675,30 @@ const BANKING_SAMPLES = [
   }
 ];
 
+
+const NORMIE_SAMPLES = [
+  {
+    name: "Staking",
+    text: `Proof-of-stake consensus mechanisms require validators to lock a minimum stake of native tokens as economic collateral. Validators are selected to propose and attest to blocks proportional to their staked amount. Slashing conditions penalize validators who sign conflicting attestations or propose invalid blocks by burning a portion of their staked collateral. Delegation allows token holders without the minimum stake or technical capacity to assign their tokens to a validator, earning proportional rewards minus a commission fee. Liquid staking derivatives tokenize the staked position, issuing a receipt token (e.g. stETH) that can be used in DeFi while the underlying asset remains locked in the consensus layer.`
+  },
+  {
+    name: "Yield Farming",
+    text: `Yield farming involves deploying digital assets across multiple DeFi protocols to maximize risk-adjusted returns through a combination of trading fees, liquidity mining incentives, and governance token emissions. Strategies include providing liquidity to automated market makers, supplying collateral to lending protocols, and recursive borrowing to amplify yield. Impermanent loss occurs when the price ratio of paired assets diverges from the entry ratio, resulting in a portfolio value less than holding the underlying assets. Protocol-native token incentives often subsidize yields beyond organic trading fee generation, creating reflexive dynamics where high APY attracts capital, which dilutes yields, triggering outflows.`
+  },
+  {
+    name: "Credit Default Swap",
+    text: `A credit default swap is a bilateral over-the-counter derivative contract in which the protection buyer makes periodic premium payments to the protection seller in exchange for a contingent payment upon the occurrence of a credit event affecting the reference entity. Credit events typically include bankruptcy, failure to pay, and restructuring. Upon a credit event, settlement occurs either physically or via cash settlement. The CDS spread reflects the market-implied probability of default and recovery rate, serving as a real-time credit risk barometer.`
+  },
+  {
+    name: "Tokenization",
+    text: `Real-world asset tokenization involves creating a digital representation of a physical or financial asset on a distributed ledger, enabling fractional ownership, programmable compliance, and atomic settlement. The token inherits its value from the underlying asset through a legal wrapper - typically a special purpose vehicle that holds the asset and issues tokens representing beneficial ownership interests. Smart contracts enforce transfer restrictions, investor eligibility, and distribution logic.`
+  },
+  {
+    name: "Quantitative Easing",
+    text: `Quantitative easing is an unconventional monetary policy tool whereby a central bank purchases longer-duration government securities from the secondary market. The mechanism operates through portfolio rebalancing: by absorbing duration risk from the private sector, QE compresses term premia and reduces longer-term interest rates, lowering borrowing costs across the economy. The central bank finances these purchases by crediting the reserve accounts of selling institutions, expanding the monetary base.`
+  }
+];
+
 // ========== STATE ==========
 let currentLane = "banker"; // "banker" = crypto->banker, "builder" = banking->builder
 let isLoading = false;
@@ -702,7 +733,9 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function getCurrentSamples() {
-  return currentLane === "banker" ? CRYPTO_SAMPLES : BANKING_SAMPLES;
+  if (currentLane === "banker") return CRYPTO_SAMPLES;
+  if (currentLane === "builder") return BANKING_SAMPLES;
+  return NORMIE_SAMPLES;
 }
 
 function renderSamples() {
@@ -731,12 +764,16 @@ function setLane(lane) {
   currentLane = lane;
   const bankerBtn = document.getElementById("laneBanker");
   const builderBtn = document.getElementById("laneBuilder");
+  const normieBtn = document.getElementById("laneNormie");
 
   bankerBtn.className = "lane-btn" + (lane === "banker" ? " active-banker" : "");
   builderBtn.className = "lane-btn" + (lane === "builder" ? " active-builder" : "");
+  normieBtn.className = "lane-btn" + (lane === "normie" ? " active-normie" : "");
 
   const translateBtn = document.getElementById("translateBtn");
-  translateBtn.textContent = lane === "banker" ? "Translate to Banker" : "Translate to Builder";
+  if (lane === "banker") translateBtn.textContent = "Translate to Banker";
+  else if (lane === "builder") translateBtn.textContent = "Translate to Builder";
+  else translateBtn.textContent = "Translate to Normie";
 
   // Clear input and re-render samples
   document.getElementById("inputText").value = "";
@@ -750,6 +787,7 @@ function setupListeners() {
 
   document.getElementById("laneBanker").addEventListener("click", () => setLane("banker"));
   document.getElementById("laneBuilder").addEventListener("click", () => setLane("builder"));
+  document.getElementById("laneNormie").addEventListener("click", () => setLane("normie"));
   document.getElementById("translateBtn").addEventListener("click", handleTranslate);
   document.getElementById("copyBtn").addEventListener("click", handleCopy);
   document.getElementById("pdfBtn").addEventListener("click", handlePdfExport);
@@ -803,7 +841,9 @@ async function handleTranslate() {
   } finally {
     isLoading = false;
     translateBtn.disabled = false;
-    translateBtn.textContent = currentLane === "banker" ? "Translate to Banker" : "Translate to Builder";
+    if (currentLane === "banker") translateBtn.textContent = "Translate to Banker";
+    else if (currentLane === "builder") translateBtn.textContent = "Translate to Builder";
+    else translateBtn.textContent = "Translate to Normie";
   }
 }
 
@@ -813,7 +853,7 @@ function showLoading() {
   area.innerHTML = `
     <div class="loading">
       <div class="loading-spinner"></div>
-      <div class="loading-text">translating between worlds...</div>
+      <div class="loading-text">${currentLane === "normie" ? "making it make sense..." : "translating between worlds..."}</div>
     </div>
   `;
   document.getElementById("actionBtns").style.display = "none";
@@ -839,8 +879,10 @@ function renderResult(data) {
   document.getElementById("emailGate").classList.remove("show");
   document.getElementById("actionBtns").style.display = "flex";
 
-  const modeLabel = currentLane === "banker" ? "Banker Mode" : "Builder Mode";
-  const modeColor = currentLane === "banker" ? "var(--navy)" : "var(--orange)";
+  let modeLabel, modeColor;
+  if (currentLane === "banker") { modeLabel = "Banker Mode"; modeColor = "var(--navy)"; }
+  else if (currentLane === "builder") { modeLabel = "Builder Mode"; modeColor = "var(--orange)"; }
+  else { modeLabel = "Normie Mode"; modeColor = "var(--orange)"; }
 
   let glossaryHTML = "";
   if (data.glossary && data.glossary.length) {
@@ -950,12 +992,10 @@ function handlePdfExport() {
   y = 32;
 
   // -- MODE BADGE --
-  const modeLabel = currentLane === "banker" ? "BANKER MODE" : "BUILDER MODE";
-  if (currentLane === "banker") {
-    doc.setFillColor(14, 52, 96);
-  } else {
-    doc.setFillColor(255, 107, 43);
-  }
+  let modeLabel;
+  if (currentLane === "banker") { modeLabel = "BANKER MODE"; doc.setFillColor(14, 52, 96); }
+  else if (currentLane === "builder") { modeLabel = "BUILDER MODE"; doc.setFillColor(255, 107, 43); }
+  else { modeLabel = "NORMIE MODE"; doc.setFillColor(255, 107, 43); }
   doc.roundedRect(margin, y, 32, 6, 1.5, 1.5, "F");
   doc.setFont("courier", "normal");
   doc.setFontSize(6.5);
