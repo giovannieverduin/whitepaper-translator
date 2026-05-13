@@ -471,6 +471,40 @@
     }
     .footer-sub a { color: var(--gray-400); text-decoration: none; }
     .footer-sub a:hover { color: var(--white); }
+
+/* HAMBURGER MENU */
+.menu-btn{background:none;border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:.4rem .6rem;cursor:pointer;display:flex;flex-direction:column;gap:4px;transition:border-color .2s}
+.menu-btn:hover{border-color:var(--orange)}
+.menu-btn span{display:block;width:18px;height:2px;background:var(--gray-400);border-radius:1px;transition:background .2s}
+.menu-btn:hover span{background:var(--orange)}
+.menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:998;opacity:0;pointer-events:none;transition:opacity .3s}
+.menu-overlay.open{opacity:1;pointer-events:auto}
+.menu-drawer{position:fixed;top:0;right:-320px;width:300px;height:100vh;background:var(--charcoal);border-left:1px solid rgba(255,255,255,.08);z-index:999;padding:2rem 1.5rem;transition:right .3s ease;overflow-y:auto}
+.menu-drawer.open{right:0}
+.menu-close{background:none;border:none;color:var(--gray-400);font-size:1.5rem;cursor:pointer;position:absolute;top:1rem;right:1rem;line-height:1;padding:.25rem}
+.menu-close:hover{color:var(--white)}
+.menu-drawer h3{font-family:var(--font-display);font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--gray-600);margin:2rem 0 .75rem}
+.menu-drawer h3:first-of-type{margin-top:.5rem}
+.menu-drawer a,.menu-drawer button.menu-item{display:block;color:var(--gray-200);text-decoration:none;font-family:var(--font-body);font-size:.95rem;padding:.6rem 0;border:none;background:none;cursor:pointer;text-align:left;width:100%;transition:color .2s}
+.menu-drawer a:hover,.menu-drawer button.menu-item:hover{color:var(--orange)}
+.menu-drawer .drawer-brand{font-family:var(--font-display);font-weight:800;font-size:1.1rem;color:var(--white)}
+.menu-drawer .drawer-brand span{color:var(--orange)}
+.about-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:none;justify-content:center;align-items:center;padding:2rem}
+.about-overlay.show{display:flex}
+.about-card{background:var(--charcoal);border:1px solid rgba(255,255,255,.08);border-radius:12px;max-width:520px;width:100%;padding:2.5rem;position:relative;max-height:85vh;overflow-y:auto}
+.about-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--gray-400);font-size:1.5rem;cursor:pointer;line-height:1}
+.about-close:hover{color:var(--white)}
+.about-card h2{font-family:var(--font-display);font-size:1.3rem;color:var(--white);margin-bottom:.25rem}
+.about-card .about-tagline{font-family:var(--font-mono);font-size:.75rem;color:var(--orange);margin-bottom:1.25rem}
+.about-card p{font-family:var(--font-body);font-size:.9rem;color:var(--gray-400);line-height:1.65;margin-bottom:1rem}
+.about-card .about-links{margin-top:1.5rem;display:flex;gap:1rem;flex-wrap:wrap}
+.about-card .about-links a{font-family:var(--font-mono);font-size:.75rem;color:var(--gray-400);text-decoration:none;border:1px solid rgba(255,255,255,.1);padding:.4rem .8rem;border-radius:6px;transition:all .2s}
+.about-card .about-links a:hover{color:var(--orange);border-color:var(--orange)}
+.footer-newsletter{margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.06)}
+.footer-newsletter a{font-family:var(--font-mono);font-size:.7rem;color:var(--gray-600);text-decoration:none;transition:color .2s}
+.footer-newsletter a:hover{color:var(--orange)}
+.footer-newsletter a em{color:var(--orange);font-style:normal}
+@media(max-width:860px){.menu-drawer{width:260px;right:-280px}.about-card{padding:1.75rem;margin:1rem}}
   </style>
 </head>
 <body>
@@ -479,7 +513,8 @@
   <a href="https://giovannieverduin.com" class="nav-brand">Giovanni Everduin<span>.</span></a>
   <span class="nav-tag">Build in Public #1</span>
   <a href="https://giovannieverduin.com" class="nav-link">Back to site</a>
-</nav>
+  <button class="menu-btn" id="menuBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </nav>
 
 <div class="hero">
   <h1>The Whitepaper <em>Translator</em></h1>
@@ -551,7 +586,10 @@
 <footer>
   <div class="footer-brand">GIO<span>/</span></div>
   <div class="footer-sub">Built in public by <a href="https://giovannieverduin.com">Giovanni Everduin</a> &middot; <a href="https://x.com/geverduin">@geverduin</a></div>
-</footer>
+  <div class="footer-newsletter">
+      <a href="https://giovannieverduin.com/newsletter" target="_blank">Read <em>Inside the Institution</em> - where TradFi meets Web3, every week</a>
+    </div>
+  </footer>
 
 <script>
 // ========== SAMPLE DATA ==========
@@ -1046,6 +1084,16 @@ function handleEmailSubmit() {
     </div>
   `;
 }
+// ========== MENU & ABOUT ==========
+document.getElementById("menuBtn").addEventListener("click",function(){document.getElementById("menuDrawer").classList.add("open");document.getElementById("menuOverlay").classList.add("open")});
+function closeMenu(){document.getElementById("menuDrawer").classList.remove("open");document.getElementById("menuOverlay").classList.remove("open")}
+document.getElementById("menuClose").addEventListener("click",closeMenu);
+document.getElementById("menuOverlay").addEventListener("click",closeMenu);
+document.getElementById("aboutBtn").addEventListener("click",function(){closeMenu();setTimeout(function(){document.getElementById("aboutOverlay").classList.add("show")},200)});
+function closeAbout(){document.getElementById("aboutOverlay").classList.remove("show")}
+document.getElementById("aboutClose").addEventListener("click",closeAbout);
+document.getElementById("aboutOverlay").addEventListener("click",function(e){if(e.target===document.getElementById("aboutOverlay"))closeAbout()});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"){closeMenu();closeAbout()}});
 </script>
 
 </body>
