@@ -167,24 +167,38 @@
       padding: 0.55rem 0.5rem;
       border-radius: 6px;
       border: none;
-      background: transparent;
+      background: #252525;
       color: var(--gray-400);
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.25s ease;
       text-align: center;
       line-height: 1.3;
+    }
+    .lane-btn:hover {
+      background: #333;
+      color: var(--gray-200);
+      transform: translateY(-1px);
     }
     .lane-btn.active-banker {
       background: var(--charcoal);
       color: var(--white);
     }
+    .lane-btn.active-banker:hover {
+      background: #222;
+    }
     .lane-btn.active-builder {
       background: var(--orange);
       color: var(--charcoal);
     }
+    .lane-btn.active-builder:hover {
+      background: #ff7d45;
+    }
     .lane-btn.active-normie {
       background: var(--white);
       color: var(--orange);
+    }
+    .lane-btn.active-normie:hover {
+      background: #f0f0f0;
     }
     .lane-arrow {
       font-size: 0.8rem;
