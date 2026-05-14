@@ -735,7 +735,7 @@ let currentLane = "banker"; // "banker" = crypto->banker, "builder" = banking->b
 let isLoading = false;
 let lastResult = null;
 let lastInputText = "";
-const FREE_LIMIT = 5;
+const FREE_LIMIT = 10;
 
 function getUsageCount() {
   try { return parseInt(localStorage.getItem("wt_uses") || "0", 10); } catch { return 0; }
