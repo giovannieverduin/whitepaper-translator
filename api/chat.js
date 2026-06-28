@@ -1,6 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
+import { createClient } from "redis";
 
 const BANKER_PROMPT = `You are a translator between DeFi/Web3 protocols and traditional finance. Your job is to take whitepaper text written in crypto-native language and render it in the language of a senior banking executive - specifically someone who understands risk management, regulatory compliance, credit analysis, and institutional capital markets, but has limited exposure to blockchain mechanics.
 
@@ -97,7 +96,6 @@ function originBlocked(req) {
 // Per IP. Defaults: 20 requests / 10 minutes.
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 20);
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 10 * 60 * 1000);
-const RATE_LIMIT_WINDOW = `${Math.max(1, Math.round(RATE_LIMIT_WINDOW_MS / 1000))} s`;
 
 function clientIp(req) {
   const xff = req.headers["x-forwarded-for"];
@@ -105,18 +103,45 @@ function clientIp(req) {
   return req.socket?.remoteAddress || "unknown";
 }
 
-// Durable limiter — active only when Upstash env vars are present (set
-// automatically by the Vercel Upstash/KV integration). Shared across ALL
-// serverless instances, so the cap is global and survives cold starts.
-const durableLimiter =
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? new Ratelimit({
-        redis: Redis.fromEnv(),
-        limiter: Ratelimit.slidingWindow(RATE_LIMIT_MAX, RATE_LIMIT_WINDOW),
-        prefix: "wptr",
-        analytics: false,
-      })
-    : null;
+// Durable limiter — node-redis against the Vercel Redis integration's
+// connection string (REDIS_URL). Shared across ALL serverless instances, so the
+// cap is global and survives cold starts. The client is created once per warm
+// instance and reused across invocations (never connect per request).
+const REDIS_URL = process.env.REDIS_URL || process.env.KV_URL || "";
+let redisPromise = null;
+function getRedis() {
+  if (!REDIS_URL) return null;
+  if (!redisPromise) {
+    redisPromise = (async () => {
+      const client = createClient({ url: REDIS_URL });
+      client.on("error", (e) => console.error("redis error:", e?.message));
+      await client.connect();
+      return client;
+    })().catch((e) => {
+      redisPromise = null; // allow a later retry instead of caching the failure
+      throw e;
+    });
+  }
+  return redisPromise;
+}
+
+// Atomic fixed-window counter: INCR the per-IP key for the current time bucket,
+// set its TTL on first hit. Returns null when no durable store is configured so
+// the caller can fall back to in-memory.
+async function rateLimitDurable(ip) {
+  const client = await getRedis();
+  if (!client) return null;
+  const windowSec = Math.max(1, Math.round(RATE_LIMIT_WINDOW_MS / 1000));
+  const bucket = Math.floor(Date.now() / (windowSec * 1000));
+  const key = `wptr:rl:${ip}:${bucket}`;
+  const count = await client.incr(key);
+  if (count === 1) await client.expire(key, windowSec);
+  if (count > RATE_LIMIT_MAX) {
+    const windowEndMs = (bucket + 1) * windowSec * 1000;
+    return { ok: false, retryAfterMs: Math.max(0, windowEndMs - Date.now()) };
+  }
+  return { ok: true };
+}
 
 // In-memory fallback — used only when no durable store is configured, or if the
 // durable store errors at runtime. Per-instance, best-effort.
@@ -139,14 +164,12 @@ function rateLimitMemory(ip) {
 }
 
 async function rateLimit(ip) {
-  if (durableLimiter) {
-    try {
-      const r = await durableLimiter.limit(ip);
-      return r.success ? { ok: true } : { ok: false, retryAfterMs: Math.max(0, r.reset - Date.now()) };
-    } catch (err) {
-      // Don't fail the request on a store blip — degrade to in-memory.
-      console.error("durable rate limit unavailable, falling back to memory:", err?.message);
-    }
+  try {
+    const durable = await rateLimitDurable(ip);
+    if (durable) return durable; // {ok:true|false}; null means no durable backend
+  } catch (err) {
+    // Don't fail the request on a store blip — degrade to in-memory.
+    console.error("durable rate limit unavailable, falling back to memory:", err?.message);
   }
   return rateLimitMemory(ip);
 }
