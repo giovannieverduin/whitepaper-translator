@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Local env — never commit real keys
+.env
+.env.local
+.env*.local
+
+# Vercel
+.vercel
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

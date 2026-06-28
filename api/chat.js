@@ -112,13 +112,13 @@ export default async function handler(req, res) {
       if (jsonMatch) {
         parsed = JSON.parse(jsonMatch[0]);
       } else {
-        return res.status(500).json({ error: "Failed to parse AI response", raw: rawText });
+        return res.status(500).json({ error: "Failed to parse AI response" });
       }
     }
 
     return res.status(200).json(parsed);
   } catch (error) {
     console.error("API error:", error);
-    return res.status(500).json({ error: error.message || "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 }
