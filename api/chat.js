@@ -1,4 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
 const BANKER_PROMPT = `You are a translator between DeFi/Web3 protocols and traditional finance. Your job is to take whitepaper text written in crypto-native language and render it in the language of a senior banking executive - specifically someone who understands risk management, regulatory compliance, credit analysis, and institutional capital markets, but has limited exposure to blockchain mechanics.
 
@@ -91,13 +93,11 @@ function originBlocked(req) {
   return Boolean(origin) && !ALLOWED_ORIGINS.includes(origin);
 }
 
-// ── Rate limit: best-effort in-memory fixed window, per IP ────────────
-// Serverless instances are ephemeral, so this is per-instance and resets on
-// cold start — meaningful burst protection without external infra. For strict
-// global limits, back this with Vercel KV / Upstash.
+// ── Rate limit: durable (Upstash Redis) with in-memory fallback ───────
+// Per IP. Defaults: 20 requests / 10 minutes.
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 20);
 const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 10 * 60 * 1000);
-const hits = new Map();
+const RATE_LIMIT_WINDOW = `${Math.max(1, Math.round(RATE_LIMIT_WINDOW_MS / 1000))} s`;
 
 function clientIp(req) {
   const xff = req.headers["x-forwarded-for"];
@@ -105,9 +105,24 @@ function clientIp(req) {
   return req.socket?.remoteAddress || "unknown";
 }
 
-function rateLimit(ip) {
+// Durable limiter — active only when Upstash env vars are present (set
+// automatically by the Vercel Upstash/KV integration). Shared across ALL
+// serverless instances, so the cap is global and survives cold starts.
+const durableLimiter =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Ratelimit({
+        redis: Redis.fromEnv(),
+        limiter: Ratelimit.slidingWindow(RATE_LIMIT_MAX, RATE_LIMIT_WINDOW),
+        prefix: "wptr",
+        analytics: false,
+      })
+    : null;
+
+// In-memory fallback — used only when no durable store is configured, or if the
+// durable store errors at runtime. Per-instance, best-effort.
+const hits = new Map();
+function rateLimitMemory(ip) {
   const now = Date.now();
-  // Opportunistic prune so the map can't grow unbounded on a warm instance.
   if (hits.size > 5000) {
     for (const [k, v] of hits) if (now >= v.resetAt) hits.delete(k);
   }
@@ -121,6 +136,19 @@ function rateLimit(ip) {
   }
   rec.count += 1;
   return { ok: true };
+}
+
+async function rateLimit(ip) {
+  if (durableLimiter) {
+    try {
+      const r = await durableLimiter.limit(ip);
+      return r.success ? { ok: true } : { ok: false, retryAfterMs: Math.max(0, r.reset - Date.now()) };
+    } catch (err) {
+      // Don't fail the request on a store blip — degrade to in-memory.
+      console.error("durable rate limit unavailable, falling back to memory:", err?.message);
+    }
+  }
+  return rateLimitMemory(ip);
 }
 
 export default async function handler(req, res) {
@@ -138,7 +166,7 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: "Origin not allowed" });
   }
 
-  const rl = rateLimit(clientIp(req));
+  const rl = await rateLimit(clientIp(req));
   if (!rl.ok) {
     res.setHeader("Retry-After", Math.ceil(rl.retryAfterMs / 1000));
     return res.status(429).json({ error: "Rate limit exceeded. Please try again later." });
