@@ -64,13 +64,84 @@ Respond ONLY in valid JSON with this structure:
 
 const client = new Anthropic();
 
+// ── CORS: restrict to known origins ──────────────────────────────────
+// Only these origins may call the API from a browser. Override with the
+// CORS_ALLOWLIST env var (comma-separated). Production domain is the default.
+const ALLOWED_ORIGINS = (
+  process.env.CORS_ALLOWLIST ||
+  "https://translator.giovannieverduin.com,http://localhost:3000,http://localhost:5173"
+)
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+function applyCors(req, res) {
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+// True when a browser sent an Origin that is not allowed (block it).
+function originBlocked(req) {
+  const origin = req.headers.origin;
+  return Boolean(origin) && !ALLOWED_ORIGINS.includes(origin);
+}
+
+// ── Rate limit: best-effort in-memory fixed window, per IP ────────────
+// Serverless instances are ephemeral, so this is per-instance and resets on
+// cold start — meaningful burst protection without external infra. For strict
+// global limits, back this with Vercel KV / Upstash.
+const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 20);
+const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 10 * 60 * 1000);
+const hits = new Map();
+
+function clientIp(req) {
+  const xff = req.headers["x-forwarded-for"];
+  if (typeof xff === "string" && xff.length) return xff.split(",")[0].trim();
+  return req.socket?.remoteAddress || "unknown";
+}
+
+function rateLimit(ip) {
+  const now = Date.now();
+  // Opportunistic prune so the map can't grow unbounded on a warm instance.
+  if (hits.size > 5000) {
+    for (const [k, v] of hits) if (now >= v.resetAt) hits.delete(k);
+  }
+  const rec = hits.get(ip);
+  if (!rec || now >= rec.resetAt) {
+    hits.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { ok: true };
+  }
+  if (rec.count >= RATE_LIMIT_MAX) {
+    return { ok: false, retryAfterMs: rec.resetAt - now };
+  }
+  rec.count += 1;
+  return { ok: true };
+}
+
 export default async function handler(req, res) {
+  applyCors(req, res);
+
   if (req.method === "OPTIONS") {
-    return res.status(200).end();
+    return res.status(204).end();
   }
 
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  if (originBlocked(req)) {
+    return res.status(403).json({ error: "Origin not allowed" });
+  }
+
+  const rl = rateLimit(clientIp(req));
+  if (!rl.ok) {
+    res.setHeader("Retry-After", Math.ceil(rl.retryAfterMs / 1000));
+    return res.status(429).json({ error: "Rate limit exceeded. Please try again later." });
   }
 
   try {
